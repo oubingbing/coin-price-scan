@@ -1,12 +1,8 @@
 package main
 
 import (
-	"coin-price-scan/enums"
 	"coin-price-scan/service"
-	"coin-price-scan/util"
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"net/http"
+	"strconv"
 )
 
 func main() {
@@ -16,7 +12,12 @@ func main() {
 		TargetPrice:  0.15,
 		TargetProfit: 200.00,
 	}
-	go service.HBScanning(&strategy)
+
+	service.ScanGate(strconv.Itoa(int(strategy.Amount)))
+	//fmt.Println(result)
+
+
+	/*go service.HBScanning(&strategy)
 
 	router := gin.Default()
 	router.StaticFS("/statics", http.Dir("./statics"))
@@ -48,6 +49,6 @@ func main() {
 	}
 	if 	err := server.ListenAndServe(); err != nil {
 		util.Error(fmt.Sprintf("启动服务失败：%v\n",err))
-	}
+	}*/
 
 }

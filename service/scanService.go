@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	HB_DOMAIN = "https://otc-api-hk.eiijo.cn"
-	BA_DOMAIN = "https://p2p.binance.com"
+	HB_DOMAIN   = "https://otc-api-hk.eiijo.cn"
+	BA_DOMAIN   = "https://p2p.binance.com"
 )
 
 type Strategy struct {
@@ -98,7 +98,6 @@ func ScanHb(payMethod,pageNum int,amount float64) ([]HBItem,error) {
 				minPrice = price
 			}
 			scanResult = append(scanResult,item)
-			return //只需要一个
 		}
 	})
 
@@ -204,7 +203,7 @@ func Scan(strategy *Strategy,pushLog map[int]int)  {
 	BaCNYMaxPrice := baMaxPrice*CHRate
 	BaCNYMinPrice := baMinPrice*CHRate
 
-	for i := len(HBResult) - 1; i >= 0; i--  {
+	for i := 0; i <= len(HBResult) - 1; i++  {
 		hbFloatPrice,_ := strconv.ParseFloat(HBResult[i].Price,64)
 		priceMaxDiff   := Decimal(BaCNYMaxPrice - hbFloatPrice)
 		priceMinDiff   := Decimal(BaCNYMinPrice - hbFloatPrice)
@@ -215,7 +214,6 @@ func Scan(strategy *Strategy,pushLog map[int]int)  {
 		_,exists := pushLog[HBResult[i].Id]
 		if !exists && (profitMax >= strategy.TargetProfit || priceMaxDiff >= strategy.TargetPrice) {
 			message := fmt.Sprintf(" 平台：%v\n 昵称：%v\n 价格：%v ￥\n 限额：%v ~ %v ￥\n 差价：%v ~ %v ￥\n 利润：%v ~ %v ￥\n 币安价格：%v ~ %v ￥\n","火币",HBResult[i].UserName,HBResult[i].Price,HBResult[i].MinTradeLimit,HBResult[i].MaxTradeLimit,priceMaxDiff,priceMinDiff,profitMax,profitMin,Decimal(BaCNYMaxPrice),Decimal(BaCNYMinPrice))
-			fmt.Println(message)
 			SendDingDing(config["DING_ACCESS_TOKEN"], config["DING_SECRET"], DingDingReq{
 				MsgType: "text",
 				Text: DingDingText{
@@ -223,6 +221,7 @@ func Scan(strategy *Strategy,pushLog map[int]int)  {
 				},
 			})
 			pushLog[HBResult[i].Id] = HBResult[i].Id
+			return
 		}
 	}
 }

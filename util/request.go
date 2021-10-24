@@ -77,6 +77,39 @@ func (h HttpClient) Post(urlVal string,data string,beforeHandle beforeRequestHan
 	return err
 }
 
+/**
+ * Post请求
+ */
+func (h HttpClient) PostForm(urlVal string,data url.Values,beforeHandle beforeRequestHandle,afterHandle afterRequestHandle) error {
+	method  := "POST"
+	client := &http.Client{}
+	req, createErr := http.NewRequest(method, urlVal,  strings.NewReader(data.Encode()))
+	if createErr != nil {
+		fmt.Printf("创建失败:%v\n",createErr)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+
+	if beforeHandle != nil{
+		beforeHandle(req)
+	}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	if afterHandle != nil{
+		afterHandle(resp)
+	}
+
+	defer resp.Body.Close()
+
+	return err
+}
+
 func getParseParam(param string) string  {
 	return url.PathEscape(param)
 }
