@@ -1,7 +1,7 @@
 package util
 
 import (
-	"admin-api/enums"
+	"coin-price-scan/enums"
 	"fmt"
 	"gopkg.in/ini.v1"
 )

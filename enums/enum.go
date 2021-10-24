@@ -18,6 +18,6 @@ const (
 
 //扫描火币 2500 ~ 2999
 const (
-	HB_REQUEST_ERR = 2500 //获取数据异常
+	HB_REQUEST_ERR 			   = 2500 //获取数据异常
 	HB_REQUEST_DATA_DECODE_ERR = 2501 //数据解析失败
 )

@@ -32,7 +32,7 @@ func Error(info string)  {
 			log.Info("Failed to log to file, using default stderr")
 		}
 
-		log.Error(info)
+		log.Info(info)
 	}()
 }
 

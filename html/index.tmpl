@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div action="form_action.asp" method="get" id="app">
+      金额: <input type="text" name="fname" v-model="amount" />元</br>
+      差价: <input type="text" name="lname" v-model="target_price"/>元</br>
+      利润: <input type="text" name="lname" v-model="target_profit"/>元</br>
+      <button v-on:click="submit">更改</button>
+    </div>
+</body>
+<script src="../../../statics/vue.min.js"></script>
+<script src="../../../statics/axios.min.js"></script>
+<script type="text/javascript">
+    new Vue({
+        delimiters:['${','}'],
+        el: '#app',
+        data: {
+            amount:'{{ .amount }}',
+            target_price:'{{ .target_price }}',
+            target_profit:'{{ .target_profit }}'
+        },
+        created: function () {
+            console.log("test")
+        },
+        methods: {
+            //提交数据
+            submit(e){
+                var url = "/update";
+                axios.post(url,{amount:parseFloat(this.amount), target_price:parseFloat(this.target_price), target_profit:parseFloat(this.target_profit)}).then( response=> {
+                    var res = response.data;
+                    if (res.code != 0){
+                        alert(res.msg)
+                    }else{
+                        alert(res.msg)
+                    }
+                }).catch(error => {
+                    this.$message.error("请求异常");
+                });
+            },
+
+        }
+    })
+</script>
+</html>
