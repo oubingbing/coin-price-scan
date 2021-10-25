@@ -1,0 +1,15 @@
+# possible values : production, development
+app_mode = development
+
+# database info
+[mysql]
+DB_HOST=
+DB_PORT= 3306
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+
+# 钉钉
+[dingding]
+DING_ACCESS_TOKEN =
+DING_SECRET = 
