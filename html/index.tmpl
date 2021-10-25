@@ -3,17 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>币价监听</title>
+    <link rel="stylesheet" href="../../../statics/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+        body {
+            background:#EEEEEE;
+        }
+
+        #app {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-top:100px;
+        }
+
+        .ip{
+            margin-bottom:20px;
+        }
+    </style>
 </head>
 <body>
-    <div action="form_action.asp" method="get" id="app">
-      金额: <input type="text" name="fname" v-model="amount" />元</br>
-      差价: <input type="text" name="lname" v-model="target_price"/>元</br>
-      利润: <input type="text" name="lname" v-model="target_profit"/>元</br>
-      <button v-on:click="submit">更改</button>
+    <div class="jumbotron" style="width:100%;height:100%">
+        <div id="app" class="container" style="width:70%;">
+            <div class="input-group input-group-lg ip">
+              <span class="input-group-addon" id="sizing-addon1">金额</span>
+              <input type="text" v-model="amount" class="form-control" placeholder="Username" aria-describedby="sizing-addon1">
+              <span class="input-group-addon" id="sizing-addon1">元</span>
+            </div>
+            <div class="input-group input-group-lg ip">
+                <span class="input-group-addon" id="sizing-addon1">差价</span>
+                <input type="text" v-model="target_price" class="form-control" placeholder="Username" aria-describedby="sizing-addon1">
+                <span class="input-group-addon" id="sizing-addon1">元</span>
+            </div>
+            <div class="input-group input-group-lg ip">
+                <span class="input-group-addon" id="sizing-addon1">利润</span>
+                <input type="text" v-model="target_profit" class="form-control" placeholder="Username" aria-describedby="sizing-addon1">
+                <span class="input-group-addon" id="sizing-addon1">元</span>
+            </div>
+          <button v-on:click="submit" class="btn btn-info">更改</button>
+        </div>
     </div>
+
 </body>
 <script src="../../../statics/vue.min.js"></script>
 <script src="../../../statics/axios.min.js"></script>
+<script src="../../../statics/bootstrap.min.js"></script>
 <script type="text/javascript">
     new Vue({
         delimiters:['${','}'],

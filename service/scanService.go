@@ -12,6 +12,12 @@ import (
 	"time"
 )
 
+//交易所
+const (
+	HUO_BI = iota
+	GATE
+)
+
 const (
 	HB_DOMAIN   = "https://otc-api-hk.eiijo.cn"
 	BA_DOMAIN   = "https://p2p.binance.com"
@@ -65,10 +71,10 @@ type BAAdvertiser struct {
 }
 
 //扫描火币
-func ScanHb(payMethod,pageNum int,amount float64) ([]HBItem,error) {
+func ScanHb(payMethod,pageNum int,amount float64) ([]CommonItem,error) {
 	url := HB_DOMAIN+fmt.Sprintf("/v1/data/trade-market?coinId=2&currency=1&tradeType=sell&currPage=%v&payMethod=%v&acceptOrder=-1&country=&blockType=general&online=1&range=0&amount=%v",pageNum,payMethod,amount)
 	var minPrice float64
-	var scanResult []HBItem
+	var scanResult []CommonItem
 	var err error
 
 	httpClient := &util.HttpClient{}
@@ -97,7 +103,11 @@ func ScanHb(payMethod,pageNum int,amount float64) ([]HBItem,error) {
 			if index == 0 {
 				minPrice = price
 			}
-			scanResult = append(scanResult,item)
+
+			p,_ := strconv.ParseFloat(item.Price,64)
+			limitAmount := fmt.Sprintf("%v ~ %v",item.MinTradeLimit,item.MinTradeLimit)
+			commonItem := CommonItem{"火币",item.Id,item.UserName,p,limitAmount}
+			scanResult = append(scanResult,commonItem)
 		}
 	})
 
@@ -139,7 +149,6 @@ func ScanBA() []BaItem {
 
 		result := BA{}
 		if err = json.Unmarshal(body,&result);err != nil {
-			fmt.Println(err.Error())
 			util.ErrDetail(enums.HB_REQUEST_DATA_DECODE_ERR,fmt.Sprintf("币安解析数据异常,result=%v",string(body)),err.Error())
 			return
 		}
@@ -157,9 +166,9 @@ func ScanBA() []BaItem {
 	return scanResult
 }
 
-func Scan(strategy *Strategy,pushLog map[int]int)  {
+func Scan(exchange int,strategy *Strategy,pushLog map[int]int)  {
 	var scanErr error
-	var HBResult []HBItem
+	var Data []CommonItem
 	var BaResult []BaItem
 	var CHRate float64
 	baMaxPrice := 0.00
@@ -176,10 +185,15 @@ func Scan(strategy *Strategy,pushLog map[int]int)  {
 	//获取火数据
 	go func (){
 		defer wg.Done()
-		HBResult,scanErr = ScanHb(strategy.PayMethod,1,strategy.Amount)
-		if scanErr != nil {
-
+		switch {
+		case exchange == HUO_BI :
+			Data,scanErr = ScanHb(strategy.PayMethod,1,strategy.Amount)
+		case exchange == GATE :
+			Data = ScanGate(strconv.Itoa(int(strategy.Amount)))
+		default:
+			Data,scanErr = ScanHb(strategy.PayMethod,1,strategy.Amount)
 		}
+		if scanErr != nil {}
 	}()
 
 	//获取币安数据
@@ -203,25 +217,24 @@ func Scan(strategy *Strategy,pushLog map[int]int)  {
 	BaCNYMaxPrice := baMaxPrice*CHRate
 	BaCNYMinPrice := baMinPrice*CHRate
 
-	for i := 0; i <= len(HBResult) - 1; i++  {
-		hbFloatPrice,_ := strconv.ParseFloat(HBResult[i].Price,64)
-		priceMaxDiff   := Decimal(BaCNYMaxPrice - hbFloatPrice)
-		priceMinDiff   := Decimal(BaCNYMinPrice - hbFloatPrice)
+	for i := 0; i <= len(Data) - 1; i++  {
+		price := Data[i].Price
+		priceMaxDiff   := Decimal(BaCNYMaxPrice - price)
+		priceMinDiff   := Decimal(BaCNYMinPrice - price)
 
-		profitMax := Decimal(strategy.Amount/hbFloatPrice*priceMaxDiff)
-		profitMin := Decimal(strategy.Amount/hbFloatPrice*priceMinDiff)
+		profitMax := Decimal(strategy.Amount/price*priceMaxDiff)
+		profitMin := Decimal(strategy.Amount/price*priceMinDiff)
 
-		_,exists := pushLog[HBResult[i].Id]
+		_,exists := pushLog[Data[i].Id]
 		if !exists && (profitMax >= strategy.TargetProfit || priceMaxDiff >= strategy.TargetPrice) {
-			message := fmt.Sprintf(" 平台：%v\n 昵称：%v\n 价格：%v ￥\n 限额：%v ~ %v ￥\n 差价：%v ~ %v ￥\n 利润：%v ~ %v ￥\n 币安价格：%v ~ %v ￥\n","火币",HBResult[i].UserName,HBResult[i].Price,HBResult[i].MinTradeLimit,HBResult[i].MaxTradeLimit,priceMaxDiff,priceMinDiff,profitMax,profitMin,Decimal(BaCNYMaxPrice),Decimal(BaCNYMinPrice))
+			message := fmt.Sprintf(" 平台：%v\n 昵称：%v\n 价格：%v ￥\n 限额：%v ￥\n 差价：%v ~ %v ￥\n 利润：%v ~ %v ￥\n 币安价格：%v ~ %v ￥\n",Data[i].Exchange,Data[i].Username,Data[i].Price,Data[i].LimitAmount,priceMaxDiff,priceMinDiff,profitMax,profitMin,Decimal(BaCNYMaxPrice),Decimal(BaCNYMinPrice))
 			SendDingDing(config["DING_ACCESS_TOKEN"], config["DING_SECRET"], DingDingReq{
 				MsgType: "text",
 				Text: DingDingText{
 					Content: message,
 				},
 			})
-			pushLog[HBResult[i].Id] = HBResult[i].Id
-			return
+			pushLog[Data[i].Id] = Data[i].Id
 		}
 	}
 }
@@ -235,7 +248,9 @@ func Decimal(v float64) float64 {
 func HBScanning(strategy *Strategy)  {
 	hbPushLog := make(map[int]int)
 	for {
-		go Scan(strategy,hbPushLog)
+		go Scan(HUO_BI,strategy,hbPushLog)
+		time.Sleep(time.Second*3)
+		go Scan(GATE,strategy,hbPushLog)
 		time.Sleep(time.Second*20)
 	}
 }
